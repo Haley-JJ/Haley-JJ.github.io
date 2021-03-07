@@ -4,6 +4,39 @@
   
     
     <entry>
+      <title>浏览器常见的攻击手段</title>
+      <link href="posts/21053/"/>
+      <url>posts/21053/</url>
+      
+        <content type="html"><![CDATA[<h1 id="浏览器常见的攻击手段"><a href="#浏览器常见的攻击手段" class="headerlink" title="浏览器常见的攻击手段"></a>浏览器常见的攻击手段</h1><h2 id="XSS"><a href="#XSS" class="headerlink" title="XSS"></a>XSS</h2><p><code>XSS</code> 全称是 <code>Cross Site Scripting</code>，为了与<code>CSS</code>区分开来，故简称 <code>XSS</code>，翻译过来就是“跨站脚本攻击”。XSS 攻击是指黑客往 HTML 文件中或者 DOM 中注入恶意脚本，从而在用户浏览页面时利用注入的恶意脚本对用户实施攻击的一种手段。</p><p><code>XSS</code>的攻击目标是为了盗取存储在客户端的cookie或者其他网站用于识别客户端身份的敏感信息。一旦获取到合法用户的信息后，攻击者甚至可以假冒合法用户与网站进行交互。</p><h3 id="攻击方式"><a href="#攻击方式" class="headerlink" title="攻击方式"></a>攻击方式</h3><h4 id="存储型XSS攻击"><a href="#存储型XSS攻击" class="headerlink" title="存储型XSS攻击"></a>存储型XSS攻击</h4><p>主要出现在让用户输入数据，供其他浏览此页的用户进行查看的地方，包括留言、评论、博客日志和各类表单等。应用程序从数据库中查询数据，在页面中显示出来，攻击者在相关页面输入恶意的脚本数据后，用户浏览此类页面时就可能受到攻击。</p><p>比如说我写了一个网站，然后攻击者在上面发布了一个文章，内容是这样的 <code>&lt;script&gt;alert(document.cookie)&lt;/script&gt;</code>，如果我没有对他的内容进行处理，直接存储到数据库，那么下一次当其他用户访问他的这篇文章的时候，服务器从数据库读取后然后响应给客户端，浏览器执行了这段脚本，就会将cookie展现出来，这就是典型的存储型XSS。</p><h4 id="反射型XSS攻击"><a href="#反射型XSS攻击" class="headerlink" title="反射型XSS攻击"></a>反射型XSS攻击</h4><p>主要做法是将脚本代码加入URL地址的请求参数里，请求参数进入程序后在页面直接输出，用户点击类似的恶意链接就可能受到攻击。</p><h3 id="预防XSS攻击"><a href="#预防XSS攻击" class="headerlink" title="预防XSS攻击"></a>预防XSS攻击</h3><p>1、将输入的数据进行转义处理</p><p>2、将用户所提供的内容进行过滤(如上面的<code>script</code>标签)</p><p>3、纯前端渲染</p><p>4、使用HTTP头指定类型<br><code>w.Header().Set(&quot;Content-Type&quot;,&quot;text/javascript&quot;)</code><br>这样就可以让浏览器解析javascript代码，而不会是html输出</p><h2 id="CSRF"><a href="#CSRF" class="headerlink" title="CSRF"></a>CSRF</h2><p><code>CSRF</code> 的全称是 Cross-site request forgery，翻译过来就是“跨站请求伪造”：攻击者诱导受害者进入第三方网站，在第三方网站中，向被攻击网站发送跨站请求。利用受害者在被攻击网站已经获取的注册凭证，绕过后台的用户验证，达到冒充用户对被攻击的网站 执行某项操作的目的。</p><h3 id="一个典型的CSRF攻击流程"><a href="#一个典型的CSRF攻击流程" class="headerlink" title="一个典型的CSRF攻击流程"></a>一个典型的CSRF攻击流程</h3><p>1、受害者登录 a.com ，并保留了登录凭证(Cookie)</p><p>2、攻击者引诱受害者访问了 b.com</p><p>3、b.com 向 a.com 发送了一个请求：a.com/act=xx，浏览器会默认携带a.com的Cookie</p><p>4、a.com接收到请求后，对请求进行验证，并确认是受害者的凭证，误以为是受害者自己发送的请求 </p><p>5、a.com，以受害者的名义执行了act=xx </p><p>6、攻击完成，攻击者在受害者不知情的情况下，冒充受害者，让a.com执行了自己定义的操作</p><h3 id="预防CSRF"><a href="#预防CSRF" class="headerlink" title="预防CSRF"></a>预防CSRF</h3><p>CSRF通常从第三方网站发起，被攻击的网站无法防止攻击发生，只能通过增强自己网站针对CSRF的防护能力来提升安全性。 </p><h4 id="一、阻止不明外域的访问"><a href="#一、阻止不明外域的访问" class="headerlink" title="一、阻止不明外域的访问"></a>一、阻止不明外域的访问</h4><h5 id="1、同源检测"><a href="#1、同源检测" class="headerlink" title="1、同源检测"></a>1、同源检测</h5><p>既然CSRF大多来自第三方网站，那么我们就直接禁止外域(或者不受信任的域名)对我们发起请求：</p><p>1、使用Origin Header确定来源域名：在部分与CSRF有关的请求中，请求的Header中会携带<code>Origin</code>字段,如果Origin存在，那么直接使用Origin中的字段确认来源域名就可以</p><p>2、使用Referer Header确定来源域名：根据HTTP协议，在HTTP头中有一个字段叫<code>Referer</code>，记录了该HTTP请求的来源地址</p><h5 id="2、Samesite-Cookie属性"><a href="#2、Samesite-Cookie属性" class="headerlink" title="2、Samesite Cookie属性"></a>2、Samesite Cookie属性</h5><p>Google起草了一份草案来改进HTTP协议，那就是为 <code>Set-Cookie</code> 响应头新增 <code>Samesite</code> 属性，它用来标明这个 Cookie是个“同站 Cookie”，同站Cookie只能作为第一方Cookie，不能作为第三方Cookie。</p><p>Samesite 有两个属性值：</p><p>Samesite=Strict: 这种称为严格模式，表明这个 Cookie 在任何情况下都不可能作为第三方 Cookie</p><p>Samesite=Lax: 这种称为宽松模式，比 Strict 放宽了点限制，假如这个请求是这种请求且同时是个GET请求，则这个 Cookie可以作为第三方Cookie</p><h4 id="二、提交时要求附加本域才能获取的信息"><a href="#二、提交时要求附加本域才能获取的信息" class="headerlink" title="二、提交时要求附加本域才能获取的信息"></a>二、提交时要求附加本域才能获取的信息</h4><h5 id="1、CSRF-Token"><a href="#1、CSRF-Token" class="headerlink" title="1、CSRF Token"></a>1、CSRF Token</h5><p>CSRF的另一个特征是攻击者无法直接窃取到用户的信息(Cookie，Header，网站内容等)，仅仅是冒用Cookie中的信息。</p><p>而CSRF攻击之所以能够成功，是因为服务器误把攻击者发送的请求当成了用户自己的请求。那么我们可以要求所有的用户请求都携带一个CSRF攻击者无法获取到的Token。服务器通过校验请求是否携带正确的Token，来把正常的请求和攻击的请求区分开，从而防范CSRF的攻击。</p><p>CSRF Token的防护策略分为三个步骤：</p><ul><li><p>将CSRF Token输出到页面中 </p></li><li><p>页面提交的请求携带这个Token </p></li><li><p>服务器验证Token是否正确</p></li></ul><h5 id="2、双重Cookie验证"><a href="#2、双重Cookie验证" class="headerlink" title="2、双重Cookie验证"></a>2、双重Cookie验证</h5><p>在会话中存储CSRF Token比较繁琐，而且不能在通用的拦截上统一处理所有的接口。那么另一种防御措施是使用双重提交Cookie。利用CSRF攻击不能获取到用户Cookie的特点，我们可以要求Ajax和表单请求携带一个Cookie中的值</p><p>双重Cookie的流程如下：</p><ul><li><p>在用户访问网站页面时，向请求域名注入一个Cookie，内容为随机字符串</p></li><li><p>在前端向后端发起请求时，取出Cookie，并添加到URL的参数中</p></li><li><p>后端接口验证Cookie中的字段与URL参数中的字段是否一致，不一致则拒绝</p></li></ul><h2 id="SQL注入"><a href="#SQL注入" class="headerlink" title="SQL注入"></a>SQL注入</h2><p>攻击者成功的向服务器提交恶意的SQL查询代码，程序在接收后错误的将攻击者的输入作为查询语句的一部分执行，导致原始的查询逻辑被改变，额外的执行了攻击者精心构造的恶意代码。</p><p>例一：<code>&#39; OR &#39;1&#39;=&#39;1</code></p><p>这是最常见的 SQL注入攻击，当我们输如用户名 admin ，然后密码输如<code>&#39; OR &#39;1&#39;=1=&#39;1</code>的时候，我们在查询用户名和密码是否正确的时候，本来要执行的是</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM user WHERE username=<span class="string">&#x27;&#x27;</span> and password=<span class="string">&#x27;&#x27;</span></span><br></pre></td></tr></table></figure><p>经过参数拼接后，会执行 SQL语句</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM user WHERE username=<span class="string">&#x27;&#x27;</span> and password=<span class="string">&#x27;&#x27;</span> OR <span class="string">&#x27;1&#x27;</span>=<span class="string">&#x27;1&#x27;</span></span><br></pre></td></tr></table></figure><p>这个时候1=1是成立，自然就跳过验证了。</p><p>例二：<code>&#39;;DROP TABLE user;--</code></p><p>这个时候SQL命令就被变成</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM user WHERE username=<span class="string">&#x27;admin&#x27;</span> and password=<span class="string">&#x27;&#x27;</span>;drop table user;--<span class="string">&#x27; </span></span><br></pre></td></tr></table></figure><p>会直接将整个表给删除了。</p><h3 id="如何预防SQL注入"><a href="#如何预防SQL注入" class="headerlink" title="如何预防SQL注入"></a>如何预防SQL注入</h3><p>1、对进入数据库的特殊字符（<code>&#39;&quot;\尖括号&amp;*</code>等）进行转义处理，或编码转换</p><p>2、在应用发布之前建议使用专业的SQL注入检测工具进行检测，以及时修补被发现的SQL注入漏洞。</p><p>3、避免网站打印出SQL错误信息，比如类型错误、字段不匹配等，把代码里的SQL语句暴露出来，防止攻击者利用讴歌这些错误信息进行SQL注入。</p><h2 id="DDOS"><a href="#DDOS" class="headerlink" title="DDOS"></a>DDOS</h2><p><code>DDOS</code>：分布式拒绝服务攻击（Distributed Denial of Service），简单说就是发送大量请求使服务器瘫痪。DDOS攻击是在DOS攻击基础上的，可以通俗理解，DOS是单挑，而DDOS是群殴，因为现代技术的发展，DOS攻击的杀伤力降低，所以出现了DDOS，攻击者借助公共网络，将大数量的计算机设备联合起来，向一个或多个目标进行攻击。</p><h2 id="SYN攻击"><a href="#SYN攻击" class="headerlink" title="SYN攻击"></a>SYN攻击</h2><p><code>SYN</code>攻击指的是，攻击客户端通过三次握手向服务器发出请求，请求建立连接，然后服务器返回一个报文，表明请求以被接受，然后客户端也会返回一个报文，最后建立连接。那么如果有这么一种情况，攻击者伪造ip地址，发出报文给服务器请求连接，这个时候服务器接收到了，根据tcp三次握手的规则，服务器也要回应一个报文，可是这个ip是伪造的，报文回应给谁呢，第二次握手出现错误，第三次自然也就不能顺利进行了，这个时候服务器收不到第三次握手时客户端发出的报文，又再重复第二次握手的操作。如果攻击者伪造了大量的ip地址并发出请求，这个时候服务器将维护一个非常大的半连接等待列表，占用了大量的资源，最后服务器瘫痪。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 浏览器 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> XSS </tag>
+            
+            <tag> CSRF </tag>
+            
+            <tag> SQL注入 </tag>
+            
+            <tag> DDOS </tag>
+            
+            <tag> SYN </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>函数的节流与防抖</title>
       <link href="posts/2443/"/>
       <url>posts/2443/</url>
