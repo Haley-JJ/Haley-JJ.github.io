@@ -5,19 +5,6 @@
     
     <entry>
       <title></title>
-      <link href="posts/1/"/>
-      <url>posts/1/</url>
-      
-        <content type="html"><![CDATA[<h1 id="什么是事件委托？"><a href="#什么是事件委托？" class="headerlink" title="什么是事件委托？"></a>什么是事件委托？</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>那什么叫事件委托呢？它还有一个名字叫事件代理，事件委托就是利用事件冒泡，只指定一个事件处理程序，就可以管理某一类型的所有事件。</p><p>那这是什么意思呢？网上的各位大牛们讲事件委托基本上都用了同一个例子，就是取快递来解释这个现象，我仔细揣摩了一下，这个例子还真是恰当，我就不去想别的例子来解释了，借花献佛，我摘过来，大家认真领会一下事件委托到底是一个什么原理：</p><p>有三个同事预计会在周一收到快递。为签收快递，有两种办法：一是三个人在公司门口等快递；二是委托给前台MM代为签收。现实当中，我们大都采用委托的方案（公司也不会容忍那么多员工站在门口就为了等快递）。前台MM收到快递后，她会判断收件人是谁，然后按照收件人的要求签收，甚至代为付款。这种方案还有一个优势，那就是即使公司里来了新员工（不管多少），前台MM也会在收到寄给新员工的快递后核实并代为签收。</p><p>这里其实还有2层意思的：</p><p>第一，现在委托前台的同事是可以代为签收的，即程序中的现有的dom节点是有事件的；</p><p>第二，新员工也是可以被前台MM代为签收的，即程序中新添加的dom节点也是有事件的。</p><h2 id="事件委托的原理"><a href="#事件委托的原理" class="headerlink" title="事件委托的原理"></a>事件委托的原理</h2><p>事件委托是利用事件的冒泡原理来实现的，何为事件冒泡呢？就是事件从最深的节点开始，然后逐步向上传播事件，举个例子：页面上有这么一个节点树，div&gt;ul&gt;li&gt;a;比如给最里面的a加一个click点击事件，那么这个事件就会一层一层的往外执行，执行顺序a&gt;li&gt;ul&gt;div，有这样一个机制，那么我们给最外面的div加点击事件，那么里面的ul，li，a做点击事件的时候，都会冒泡到最外层的div上，所以都会触发，这就是事件委托，委托它们父级代为执行事件。</p><h2 id="事件委托的实现"><a href="#事件委托的实现" class="headerlink" title="事件委托的实现"></a>事件委托的实现</h2><p>这里用父级ul做事件处理，当li被点击时，由于冒泡原理，事件就会冒泡到ul上，因为ul上有点击事件，所以事件就会触发。</p><p>Event对象提供了一个属性叫 <code>target</code>，可以返回事件的目标节点，我们成为事件源，也就是说，target就可以表示为当前的事件操作的dom，但是不是真正操作dom，当然，这个是有兼容性的，标准浏览器用 <code>event.target</code> ，IE浏览器用<code>event.srcElement</code>，此时只是获取了当前节点的位置，并不知道是什么节点名称，这里我们用tagName来获取具体是什么标签名，这个返回的是一个大写的，我们需要转成小写再做比较:</p><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&lt;ul id=<span class="string">&quot;parent&quot;</span>&gt;</span><br><span class="line">    &lt;li <span class="class"><span class="keyword">class</span></span>=<span class="string">&quot;child&quot;</span>&gt;one&lt;/li&gt;</span><br><span class="line">&lt;li <span class="class"><span class="keyword">class</span></span>=<span class="string">&quot;child&quot;</span>&gt;two&lt;/li&gt;</span><br><span class="line">&lt;li <span class="class"><span class="keyword">class</span></span>=<span class="string">&quot;child&quot;</span>&gt;three&lt;/li&gt;</span><br><span class="line">    ...</span><br><span class="line">&lt;/ul&gt;</span><br><span class="line">&lt;script type=<span class="string">&quot;text/javascript&quot;</span>&gt; </span><br><span class="line">    <span class="comment">//⽗元素 </span></span><br><span class="line">    <span class="keyword">var</span> dom= <span class="built_in">document</span>.getElementById(<span class="string">&#x27;parent&#x27;</span>); </span><br><span class="line"><span class="comment">//⽗元素绑定事件，代理⼦元素的点击事件 </span></span><br><span class="line">dom.onclick= <span class="function"><span class="keyword">function</span>(<span class="params">event</span>) </span>&#123; </span><br><span class="line">        <span class="keyword">var</span> event= event || <span class="built_in">window</span>.event;</span><br><span class="line">        <span class="keyword">var</span> curTarget= event.target || event.srcElement;</span><br><span class="line">        <span class="keyword">if</span> (curTarget.tagName.toLowerCase() == <span class="string">&#x27;li&#x27;</span>) &#123; </span><br><span class="line">            <span class="comment">//事件处理</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure><p>这样做的好处就是：</p><p>1、节省内存占用，减少事件注册</p><p>2、新增子元素时也不需要再次对其绑定事件，适合动态添加元素</p><p>但它也有一定的局限性：</p><p>1、focus、blur之类的事件本身没有事件冒泡的机制，所以没法委托</p><p>2、mousemove、mouseout这样的事件，虽然有事件冒泡，但是只能不断通过位置去计算定位，对性能消耗比较高，不适合事件委托。</p>]]></content>
-      
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title></title>
       <link href="posts/3/"/>
       <url>posts/3/</url>
       
@@ -74,37 +61,6 @@
             <tag> DDOS </tag>
             
             <tag> SYN </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>DOM事件流</title>
-      <link href="posts/48335/"/>
-      <url>posts/48335/</url>
-      
-        <content type="html"><![CDATA[<h1 id="DOM事件流"><a href="#DOM事件流" class="headerlink" title="DOM事件流"></a>DOM事件流</h1><p><strong>事件</strong>就是文档或浏览器窗口中发⽣的⼀些特定的交互瞬间。</p><p><strong>事件流</strong>(又叫时间传播)描述的是从页面中接收事件的顺序。</p><h2 id="事件冒泡"><a href="#事件冒泡" class="headerlink" title="事件冒泡"></a>事件冒泡</h2><p>时间冒泡，即事件开始时由最具体的元素(文档中嵌套层次最深的那个节点)接收，然后逐级向上传播到较为不具体的节点。</p><p>例子如下：</p><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">title</span>&gt;</span>Document<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure><p>如果单击了如上例子中的<code>&lt;div&gt;</code>元素，那么这个click事件会沿着DOM树向上传播，在每一级的节点上都会发生。所以以上代码按照如下顺序传播：</p><p>1、div</p><p>2、body</p><p>3、html</p><p>4、document</p><h3 id="阻止事件冒泡"><a href="#阻止事件冒泡" class="headerlink" title="阻止事件冒泡"></a>阻止事件冒泡</h3><p>事件冒泡是可以被阻止的。防止因为事件冒泡而带来不必要的错误和困扰。</p><p>w3c的方法是：<code>e.stopPropagation()</code></p><p>stopPropagation也是事件对象(Event)的一个方法，作用是阻止目标元素的冒泡事件，但是会不阻止默认行为。</p><p>IE则是：<code>e.cancelBubble = true</code></p><h2 id="事件捕获"><a href="#事件捕获" class="headerlink" title="事件捕获"></a>事件捕获</h2><p>事件捕获的思想就是不太具体的节点应该更早接收到事件，而最具体的节点应该是最后接收到事件。</p><p>事件捕获的用意就在于在事件到达预定目标之前就捕获它。</p><p>还是以上一节的html结构为例：</p><p>在事件捕获的过程中，document对象会首先接收到click事件，然后事件沿DOM树一次向下，一直传播到事件的实际目标，即触发单击事件的div元素。</p><p>所以以上代码按照如下顺序传播：</p><p>1、document</p><p>2、html</p><p>3、body</p><p>4、div</p><h2 id="事件流"><a href="#事件流" class="headerlink" title="事件流"></a>事件流</h2><p>DOM2级事件规定的事件流包括三个阶段：</p><p>1、事件捕获阶段：事件从Document节点自上而下向目标节点传播的阶段；</p><p>2、处于目标阶段：真正的目标节点正在处理事件的阶段；</p><p>3、时间冒泡阶段：事件从目标节点自下而上向Document节点传播的阶段；</p><p><img src="https://img2.jimu98.cn/haley/20210307215657.jpeg" alt="如图："></p><p><strong>注意：</strong></p><p>1、JS代码只能执行捕获或者冒泡其中一个阶段(要么是捕获要么是冒泡)；</p><p>2、onclick和attachEvent(ie)只能得到冒泡阶段；</p><p>3、addEventListener(type, listener[, useCapture]) 第三个参数如果是true，表示在事件捕获阶段调用事件处理程序；如果是false(不写默认是false)，表示在事件冒泡阶段调用事件处理程序；</p><p>4、实际开发中，我们很少使用事件捕获，我们更关注事件冒泡；</p>]]></content>
-      
-      
-      <categories>
-          
-          <category> JavaScript </category>
-          
-      </categories>
-      
-      
-        <tags>
-            
-            <tag> 事件流 </tag>
-            
-            <tag> 事件冒泡 </tag>
-            
-            <tag> 事件捕获 </tag>
-            
-            <tag> DOM </tag>
             
         </tags>
       
@@ -369,6 +325,64 @@
           
       </categories>
       
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>什么是事件委托？</title>
+      <link href="posts/42773/"/>
+      <url>posts/42773/</url>
+      
+        <content type="html"><![CDATA[<h1 id="什么是事件委托？"><a href="#什么是事件委托？" class="headerlink" title="什么是事件委托？"></a>什么是事件委托？</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>那什么叫事件委托呢？它还有一个名字叫事件代理，事件委托就是利用事件冒泡，只指定一个事件处理程序，就可以管理某一类型的所有事件。</p><p>那这是什么意思呢？网上的各位大牛们讲事件委托基本上都用了同一个例子，就是取快递来解释这个现象，我仔细揣摩了一下，这个例子还真是恰当，我就不去想别的例子来解释了，借花献佛，我摘过来，大家认真领会一下事件委托到底是一个什么原理：</p><p>有三个同事预计会在周一收到快递。为签收快递，有两种办法：一是三个人在公司门口等快递；二是委托给前台MM代为签收。现实当中，我们大都采用委托的方案（公司也不会容忍那么多员工站在门口就为了等快递）。前台MM收到快递后，她会判断收件人是谁，然后按照收件人的要求签收，甚至代为付款。这种方案还有一个优势，那就是即使公司里来了新员工（不管多少），前台MM也会在收到寄给新员工的快递后核实并代为签收。</p><p>这里其实还有2层意思的：</p><p>第一，现在委托前台的同事是可以代为签收的，即程序中的现有的dom节点是有事件的；</p><p>第二，新员工也是可以被前台MM代为签收的，即程序中新添加的dom节点也是有事件的。</p><h2 id="事件委托的原理"><a href="#事件委托的原理" class="headerlink" title="事件委托的原理"></a>事件委托的原理</h2><p>事件委托是利用事件的冒泡原理来实现的，何为事件冒泡呢？就是事件从最深的节点开始，然后逐步向上传播事件，举个例子：页面上有这么一个节点树，div&gt;ul&gt;li&gt;a;比如给最里面的a加一个click点击事件，那么这个事件就会一层一层的往外执行，执行顺序a&gt;li&gt;ul&gt;div，有这样一个机制，那么我们给最外面的div加点击事件，那么里面的ul，li，a做点击事件的时候，都会冒泡到最外层的div上，所以都会触发，这就是事件委托，委托它们父级代为执行事件。</p><h2 id="事件委托的实现"><a href="#事件委托的实现" class="headerlink" title="事件委托的实现"></a>事件委托的实现</h2><p>这里用父级ul做事件处理，当li被点击时，由于冒泡原理，事件就会冒泡到ul上，因为ul上有点击事件，所以事件就会触发。</p><p>Event对象提供了一个属性叫 <code>target</code>，可以返回事件的目标节点，我们成为事件源，也就是说，target就可以表示为当前的事件操作的dom，但是不是真正操作dom，当然，这个是有兼容性的，标准浏览器用 <code>event.target</code> ，IE浏览器用<code>event.srcElement</code>，此时只是获取了当前节点的位置，并不知道是什么节点名称，这里我们用tagName来获取具体是什么标签名，这个返回的是一个大写的，我们需要转成小写再做比较:</p><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&lt;ul id=<span class="string">&quot;parent&quot;</span>&gt;</span><br><span class="line">    &lt;li <span class="class"><span class="keyword">class</span></span>=<span class="string">&quot;child&quot;</span>&gt;one&lt;/li&gt;</span><br><span class="line">&lt;li <span class="class"><span class="keyword">class</span></span>=<span class="string">&quot;child&quot;</span>&gt;two&lt;/li&gt;</span><br><span class="line">&lt;li <span class="class"><span class="keyword">class</span></span>=<span class="string">&quot;child&quot;</span>&gt;three&lt;/li&gt;</span><br><span class="line">    ...</span><br><span class="line">&lt;/ul&gt;</span><br><span class="line">&lt;script type=<span class="string">&quot;text/javascript&quot;</span>&gt; </span><br><span class="line">    <span class="comment">//⽗元素 </span></span><br><span class="line">    <span class="keyword">var</span> dom= <span class="built_in">document</span>.getElementById(<span class="string">&#x27;parent&#x27;</span>); </span><br><span class="line"><span class="comment">//⽗元素绑定事件，代理⼦元素的点击事件 </span></span><br><span class="line">dom.onclick= <span class="function"><span class="keyword">function</span>(<span class="params">event</span>) </span>&#123; </span><br><span class="line">        <span class="keyword">var</span> event= event || <span class="built_in">window</span>.event;</span><br><span class="line">        <span class="keyword">var</span> curTarget= event.target || event.srcElement;</span><br><span class="line">        <span class="keyword">if</span> (curTarget.tagName.toLowerCase() == <span class="string">&#x27;li&#x27;</span>) &#123; </span><br><span class="line">            <span class="comment">//事件处理</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure><p>这样做的好处就是：</p><p>1、节省内存占用，减少事件注册</p><p>2、新增子元素时也不需要再次对其绑定事件，适合动态添加元素</p><p>但它也有一定的局限性：</p><p>1、focus、blur之类的事件本身没有事件冒泡的机制，所以没法委托</p><p>2、mousemove、mouseout这样的事件，虽然有事件冒泡，但是只能不断通过位置去计算定位，对性能消耗比较高，不适合事件委托。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> JavaScript </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> DOM </tag>
+            
+            <tag> 事件委托 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>DOM事件流</title>
+      <link href="posts/48335/"/>
+      <url>posts/48335/</url>
+      
+        <content type="html"><![CDATA[<h1 id="DOM事件流"><a href="#DOM事件流" class="headerlink" title="DOM事件流"></a>DOM事件流</h1><p><strong>事件</strong>就是文档或浏览器窗口中发⽣的⼀些特定的交互瞬间。</p><p><strong>事件流</strong>(又叫时间传播)描述的是从页面中接收事件的顺序。</p><h2 id="事件冒泡"><a href="#事件冒泡" class="headerlink" title="事件冒泡"></a>事件冒泡</h2><p>时间冒泡，即事件开始时由最具体的元素(文档中嵌套层次最深的那个节点)接收，然后逐级向上传播到较为不具体的节点。</p><p>例子如下：</p><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">title</span>&gt;</span>Document<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure><p>如果单击了如上例子中的<code>&lt;div&gt;</code>元素，那么这个click事件会沿着DOM树向上传播，在每一级的节点上都会发生。所以以上代码按照如下顺序传播：</p><p>1、div</p><p>2、body</p><p>3、html</p><p>4、document</p><h3 id="阻止事件冒泡"><a href="#阻止事件冒泡" class="headerlink" title="阻止事件冒泡"></a>阻止事件冒泡</h3><p>事件冒泡是可以被阻止的。防止因为事件冒泡而带来不必要的错误和困扰。</p><p>w3c的方法是：<code>e.stopPropagation()</code></p><p>stopPropagation也是事件对象(Event)的一个方法，作用是阻止目标元素的冒泡事件，但是会不阻止默认行为。</p><p>IE则是：<code>e.cancelBubble = true</code></p><h2 id="事件捕获"><a href="#事件捕获" class="headerlink" title="事件捕获"></a>事件捕获</h2><p>事件捕获的思想就是不太具体的节点应该更早接收到事件，而最具体的节点应该是最后接收到事件。</p><p>事件捕获的用意就在于在事件到达预定目标之前就捕获它。</p><p>还是以上一节的html结构为例：</p><p>在事件捕获的过程中，document对象会首先接收到click事件，然后事件沿DOM树一次向下，一直传播到事件的实际目标，即触发单击事件的div元素。</p><p>所以以上代码按照如下顺序传播：</p><p>1、document</p><p>2、html</p><p>3、body</p><p>4、div</p><h2 id="事件流"><a href="#事件流" class="headerlink" title="事件流"></a>事件流</h2><p>DOM2级事件规定的事件流包括三个阶段：</p><p>1、事件捕获阶段：事件从Document节点自上而下向目标节点传播的阶段；</p><p>2、处于目标阶段：真正的目标节点正在处理事件的阶段；</p><p>3、时间冒泡阶段：事件从目标节点自下而上向Document节点传播的阶段；</p><p><img src="https://img2.jimu98.cn/haley/20210307215657.jpeg" alt="如图："></p><p><strong>注意：</strong></p><p>1、JS代码只能执行捕获或者冒泡其中一个阶段(要么是捕获要么是冒泡)；</p><p>2、onclick和attachEvent(ie)只能得到冒泡阶段；</p><p>3、addEventListener(type, listener[, useCapture]) 第三个参数如果是true，表示在事件捕获阶段调用事件处理程序；如果是false(不写默认是false)，表示在事件冒泡阶段调用事件处理程序；</p><p>4、实际开发中，我们很少使用事件捕获，我们更关注事件冒泡；</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> JavaScript </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 事件流 </tag>
+            
+            <tag> 事件冒泡 </tag>
+            
+            <tag> 事件捕获 </tag>
+            
+            <tag> DOM </tag>
+            
+        </tags>
       
     </entry>
     
